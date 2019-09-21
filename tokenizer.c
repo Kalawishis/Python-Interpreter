@@ -7,6 +7,7 @@
 int program_offset = 0;
 char* program = NULL;
 
+// for help with identifying tokens
 const char* KEYWORDS[] = {
         "False",
         "None",
@@ -58,6 +59,7 @@ bool streq(const char* first, const char* second) {
     return true;
 }
 
+// checks if a given word is a keyword
 TokenType match_word(const char* word) {
     for (int i = KEYWORDS_START + 1; i < KEYWORDS_END; i++) {
         if (streq(word, KEYWORDS[i - KEYWORDS_START - 1])) {
@@ -67,18 +69,22 @@ TokenType match_word(const char* word) {
     return VAR_LIT;
 }
 
+// checks if the character can be a starting character for a variable name
 bool var_start_valid(char c) {
     return c >= 65 && c <= 90 || c >= 97 && c <= 122 || c == 95;
 };
 
+// checks if the character can be a character inside a variable name
 bool var_valid(char c) {
     return c >= 65 && c <= 90 || c >= 97 && c <= 122 || c == 95 || c >= 48 && c <= 57;
 };
 
+// checks if a character is a number
 bool num_valid(char c) {
     return c >= 48 && c <= 57;
 }
 
+// converts a ASCII numeric string into a Token
 Token process_num(const char* program_text) {
     int num_len = 1;
     bool is_float = program_text[0] == '.';
@@ -103,6 +109,8 @@ Token process_num(const char* program_text) {
     return (Token){INT_LIT, num_name, num_len};
 }
 
+// converts the first available part of the program text into an
+// applicable token
 Token tokenize(const char* program_text) {
     switch(program_text[0]) {
         case '"': {

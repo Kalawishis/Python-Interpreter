@@ -9,6 +9,8 @@
 ASN* program_tree;
 int current_indent = 0;
 extern void deduce_print(PyType* p);
+
+// basic integer powers
 int power(int base, int exponent) {
     int res = 1;
     while (exponent--) {
@@ -16,6 +18,8 @@ int power(int base, int exponent) {
     }
     return res;
 }
+
+// converts character array of given length to an int
 int str_to_int(char* text, int length) {
     int res = 0;
     int exponent = 0;
@@ -26,6 +30,8 @@ int str_to_int(char* text, int length) {
     }
     return res;
 }
+
+// converts character array of variable length to a double
 double str_to_double(char* text) {
     double res = 0;
     int exponent = 1;
@@ -42,34 +48,42 @@ double str_to_double(char* text) {
     }
     return res;
 }
+
+// allocates the PyTypes in memory for Abstract Syntax Nodes to hold
+// the PyType is configured based on the type name
 PyType* alloc_and_write(const char* name, Token t) {
     void* value_loc = NULL;
-    if (streq(name, PRIMITIVE_LIST[0])) {
+    if (streq(name, PRIMITIVE_LIST[0])) { // if the type is bool
         value_loc = malloc(sizeof(bool));
         *(bool*)value_loc = (t.type == TRUE) ? true : false;
         return py_create(value_loc, PRIMITIVE_LIST[0]);
     }
-    else if (streq(name, PRIMITIVE_LIST[1])) {
+    else if (streq(name, PRIMITIVE_LIST[1])) { // if the type is int
         value_loc = malloc(sizeof(int));
         *(int*)value_loc = str_to_int(t.text, t.length);
         return py_create(value_loc, PRIMITIVE_LIST[1]);
     }
-    else if (streq(name, PRIMITIVE_LIST[2])) {
+    else if (streq(name, PRIMITIVE_LIST[2])) { // if the type is float
         value_loc = malloc(sizeof(double));
         *(double*)value_loc = str_to_double(t.text);
         return py_create(value_loc, PRIMITIVE_LIST[2]);
     }
-    else if (streq(name, PRIMITIVE_LIST[3])) {
+    else if (streq(name, PRIMITIVE_LIST[3])) { // if the type is string
         value_loc = str_char_copy(t.text);
         return py_create(value_loc, PRIMITIVE_LIST[3]);
     }
-    else if (streq(name, PRIMITIVE_LIST[4])) {
+    else if (streq(name, PRIMITIVE_LIST[4])) { // if the type is None
         return py_create(NULL, PRIMITIVE_LIST[4]);
     }
-
-    /* and more */
+    // support for more types
     return NULL;
 }
+
+
+/*
+ * Following functions constitute a recursive descent parser.
+ */
+
 bool bool_literal(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -85,6 +99,7 @@ bool bool_literal(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool int_literal(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -100,6 +115,7 @@ bool int_literal(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool float_literal(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -115,6 +131,7 @@ bool float_literal(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool string_literal(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -130,6 +147,7 @@ bool string_literal(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool none_literal(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -145,6 +163,8 @@ bool none_literal(ASN* asn) {
     program_offset = save;
     return false;
 }
+
+// ASN for Python variable names
 bool var_literal(ASN* asn) { // IMPROVE THIS PLZ
     int save = program_offset;
     Token t = next_NSP();
@@ -160,19 +180,27 @@ bool var_literal(ASN* asn) { // IMPROVE THIS PLZ
     program_offset = save;
     return false;
 }
+
 bool tuple_literal(ASN* asn) {
     return false;
 }
+
 bool list_literal(ASN* asn) {
     return false;
 }
+
 bool dict_literal(ASN* asn) {
     return false;
 }
+
 bool set_literal(ASN* asn) {
     return false;
 }
+
+// forward declaration
 void expression_emt(ASN* asn);
+
+// ASN for a singular object without operations, via a literal or variable name
 void atom_emt(ASN* asn) {
     bool res = bool_literal(asn) ||
                int_literal(asn) ||
@@ -186,7 +214,7 @@ void atom_emt(ASN* asn) {
                set_literal(asn);
     if (!res) {
         Token t = next_NSP();
-        if (t.type == L_PAR) {
+        if (t.type == L_PAR) { // parenthesized expressions are atoms
             expression_emt(asn);
             t = next_NSP();
             if (!(t.type == R_PAR)) {
@@ -200,10 +228,16 @@ void atom_emt(ASN* asn) {
         }
     }
 }
+
+// ASN for function call () or indexing [] operations
 void call_index_emt(ASN* asn) {
     atom_emt(asn);
 }
+
+// forward declaration
 void pre_emt(ASN* asn);
+
+// ASN for exponentation ** operations
 void exp_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     call_index_emt(first);
@@ -224,6 +258,8 @@ void exp_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for unary +, 0, ~ operations
 void pre_emt(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -242,6 +278,8 @@ void pre_emt(ASN* asn) {
     program_offset = save;
     exp_emt(asn);
 }
+
+// ASN for division /, floor division //, and multiplication * operations
 void scale_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     pre_emt(first);
@@ -267,6 +305,8 @@ void scale_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for plus + and minus - operations
 void add_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     scale_emt(first);
@@ -290,6 +330,8 @@ void add_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for bitwise >>, << operations
 void shift_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     add_emt(first);
@@ -313,6 +355,8 @@ void shift_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for bitwise and & operations
 void bit_and_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     shift_emt(first);
@@ -333,6 +377,8 @@ void bit_and_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for bitwise xor ^ operations
 void bit_xor_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     bit_and_emt(first);
@@ -353,6 +399,8 @@ void bit_xor_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for bitwise or | operations
 void bit_or_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     bit_xor_emt(first);
@@ -373,6 +421,8 @@ void bit_or_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for various comparison operations
 void comp_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     bit_or_emt(first);
@@ -404,6 +454,8 @@ void comp_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for logical not operations
 void not_emt(ASN* asn) {
     int save = program_offset;
     if (next_NSP().type == NOT) {
@@ -419,6 +471,8 @@ void not_emt(ASN* asn) {
     program_offset = save;
     comp_emt(asn);
 }
+
+// ASN for logical and operations
 void and_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     not_emt(first);
@@ -439,6 +493,8 @@ void and_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// ASN for logical or operations
 void or_emt(ASN* asn) {
     ASN* first = (ASN*)malloc(sizeof(ASN));
     and_emt(first);
@@ -459,12 +515,22 @@ void or_emt(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
 void lambda_emt(ASN* asn) {
     or_emt(asn);
 }
+
+// ASN for general expressions
 void expression_emt(ASN* asn) {
     lambda_emt(asn);
 }
+
+/*
+ * Following functions return true if the statement they were checking for
+ * is present
+ */
+
+// ASN for assignment statements (=, +=, -=, etc)
 bool assign_stmt(ASN* asn) {
     int save = program_offset;
     Token t1 = next_NSP();
@@ -482,7 +548,7 @@ bool assign_stmt(ASN* asn) {
             t2.type == BIT_AND_EQ ||
             t2.type == BIT_XOR_EQ ||
             t2.type == R_SHIFT_EQ ||
-            t2.type == L_SHIFT_EQ) {
+            t2.type == L_SHIFT_EQ) { // if <var> =, +=, -=, etc..
             *asn = (ASN) {true,
                           t2.type,
                           NULL,
@@ -502,9 +568,11 @@ bool assign_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool import_stmt(ASN* asn) {
     return false; // improve this later
 }
+
 bool return_stmt(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -521,6 +589,7 @@ bool return_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool pass_stmt(ASN* asn) {
     int save = program_offset;
     if (next_NSP().type == PASS) {
@@ -535,6 +604,7 @@ bool pass_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool break_stmt(ASN* asn) {
     int save = program_offset;
     if (next_NSP().type == BREAK) {
@@ -549,6 +619,7 @@ bool break_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool print_stmt(ASN* asn) {
     int save = program_offset;
     if (next_NSP().type == PRINT) {
@@ -572,6 +643,7 @@ bool print_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool comment_literal(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -587,6 +659,8 @@ bool comment_literal(ASN* asn) {
     program_offset = save;
     return false;
 }
+
+// General ASN for all non-compound statements
 void singular_stmt(ASN* asn) {
     bool res = assign_stmt(asn) ||
                import_stmt(asn) ||
@@ -609,15 +683,24 @@ void singular_stmt(ASN* asn) {
         exit(-1);
     }
 }
+
+// This function is called when the parser is at the end of one line and
+// expecting the next to be indented.
 void newline_indented() {
     Token t = next_NSP();
     if (t.type == NEWLINE) {
         Token test = test_next();
+
+        // check proper indentation here for spaces
+        // if proper indentation found, increase current indent
         if (test.type == SPACE && test.length == (current_indent + 1)*4) {
             current_indent++;
             return;
         }
         t = next_NSP();
+
+        // check proper indentation here for tabs
+        // if proper indentation found, do same
         if (t.type == TAB && t.length == current_indent + 1) {
             current_indent++;
         }
@@ -632,6 +715,8 @@ void newline_indented() {
         exit(-1);
     }
 }
+
+// Check for weird indentations
 bool proper_tabbing(int my_indent) {
     int save = program_offset;
     int found_indent = 0;
@@ -652,20 +737,30 @@ bool proper_tabbing(int my_indent) {
             program_offset = save;
         }
     }
+
+    // this detects if we are exiting from a block into enclosing code
     if (found_indent < my_indent) {
         program_offset = save;
         current_indent = found_indent;
         return false;
     }
+
+    // unnecessary indentation, or indentation without calling newline_indented()
     if (found_indent > my_indent) {
         printf("parser error, excess indentation\n");
         exit(-1);
     }
     return true;
 }
+
+/*
+ * Foward declarations
+ */
 void general_stmt_group(ASN* asn);
 bool elif_stmt(ASN* asn);
 bool else_stmt(ASN* asn);
+
+// handles if statements and their blocks
 bool if_stmt(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -681,11 +776,15 @@ bool if_stmt(ASN* asn) {
         t = next_NSP();
         if (!(t.type == COLON)) {
             printf("parser error, conditional without colon\n");
+            exit(-1);
         }
         newline_indented(); // increases indent by 1
         general_stmt_group(asn->second);
 
         int save = program_offset;
+
+        // this checks if the current tab is not still ahead of the if
+        // statement
         if (!proper_tabbing(my_indent)) {
             return true;
         }
@@ -699,6 +798,9 @@ bool if_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
+// handles elif statements and their blocks
+// similar to if_stmt()
 bool elif_stmt(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -714,6 +816,7 @@ bool elif_stmt(ASN* asn) {
         t = next_NSP();
         if (!(t.type == COLON)) {
             printf("parser error, conditional without colon\n");
+            exit(-1);
         }
         newline_indented(); // increases indent by 1
         general_stmt_group(asn->second);
@@ -732,6 +835,8 @@ bool elif_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
+// handles else statements and their blocks
 bool else_stmt(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -748,6 +853,9 @@ bool else_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
+// handles while statements and their blocks
+// similar to if_stmt()
 bool while_stmt(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -782,6 +890,8 @@ bool while_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
+// handles for statements and their blocks
 bool for_stmt(ASN* asn) {
     int save = program_offset;
     Token t = next_NSP();
@@ -800,6 +910,8 @@ bool for_stmt(ASN* asn) {
                             (ASN*)malloc(sizeof(ASN)),
                             NULL};
         bool res = var_literal(asn->first->first);
+
+        // can only handle single-var iterators at this point
         if (!res) {
             printf("parser error, bad for loop l-value formatting\n");
             exit(-1);
@@ -813,8 +925,9 @@ bool for_stmt(ASN* asn) {
         t = next_NSP();
         if (!(t.type == COLON)) {
             printf("parser error, for loop without colon\n");
+            exit(-1);
         }
-        newline_indented();
+        newline_indented(); // advance current tab by 1
         general_stmt_group(asn->second);
 
         int save = program_offset;
@@ -831,12 +944,16 @@ bool for_stmt(ASN* asn) {
     program_offset = save;
     return false;
 }
+
 bool def_stmt(ASN* asn) {
     return false;
 }
+
 bool class_stmt(ASN* asn) {
     return false;
 }
+
+// ASN for a statement, singular or compound
 void general_stmt(ASN* asn) {
     bool res = class_stmt(asn) ||
                def_stmt(asn) ||
@@ -847,6 +964,8 @@ void general_stmt(ASN* asn) {
         singular_stmt(asn);
     }
 }
+
+// ASN for multiple statements in series (in essence, the program
 void general_stmt_group(ASN* asn) {
     int my_indent = current_indent;
     ASN* first = (ASN*)malloc(sizeof(ASN));
@@ -859,6 +978,9 @@ void general_stmt_group(ASN* asn) {
         return;
     }
     program_offset = save;
+
+    // the general statement group ends when we escape into compound
+    // statement enclosing the general statement group
     while (proper_tabbing(my_indent)) {
         ASN* parent = (ASN*)malloc(sizeof(ASN));
         *parent = (ASN){true,
@@ -888,6 +1010,8 @@ void general_stmt_group(ASN* asn) {
     *asn = *first;
     free(first);
 }
+
+// allocates space for program tree and creates it
 void parse_program() {
     program_tree = (ASN*)malloc(sizeof(ASN));
     general_stmt_group(program_tree);

@@ -8,6 +8,7 @@ VarNode* var_list;
 bool var_list_init = false;
 
 extern bool truthify(PyType* p);
+
 void deduce_print(PyType* p) {
     if (streq(p->name, PRIMITIVE_LIST[0])) {
         if (*(bool*)p->data == true) {
@@ -30,6 +31,8 @@ void deduce_print(PyType* p) {
         printf("None\n");
     }
 }
+
+// decides which abstract syntax node to free during a logical operation
 void logical_free(PyType* res, PyType* left, PyType* right) {
     if (left == right) {
         return;
@@ -43,6 +46,9 @@ void logical_free(PyType* res, PyType* left, PyType* right) {
         free(left);
     }
 }
+
+// handles variable assignment, initializes variable-storing data
+// structure if necessary
 void var_assign(VarNode* var_list, String* var_name, PyType* obj) {
     if (!var_list_init) {
         var_list_init = true;
@@ -67,6 +73,8 @@ void var_assign(VarNode* var_list, String* var_name, PyType* obj) {
         temp = temp->next;
     }
 }
+
+// handles variable access
 PyType* var_retrieve(VarNode* var_list, String* var_name) {
     VarNode* temp = var_list;
     while (temp) {
@@ -77,6 +85,9 @@ PyType* var_retrieve(VarNode* var_list, String* var_name) {
     }
     return NULL;
 }
+
+// operates correct unary operation on input PyType and returns output
+// PyType
 PyType* monop_resolve(TokenType op, PyType* p) {
     PyType* res;
     switch(op) {
@@ -100,6 +111,9 @@ PyType* monop_resolve(TokenType op, PyType* p) {
     free(p);
     return res;
 }
+
+// operates correct binary operation on input PyTypes and returns output
+// PyType
 PyType* binop_resolve(PyType* left, TokenType op, PyType* right) {
     PyType* res;
     switch(op) {
@@ -199,6 +213,8 @@ PyType* binop_resolve(PyType* left, TokenType op, PyType* right) {
     free(right);
     return res;
 }
+
+// runs the operations specified by the abstract syntax tree
 PyType* interpret(ASN* asn) {
     if (asn->is_op) {
         switch(asn->op) {
@@ -305,7 +321,7 @@ PyType* interpret(ASN* asn) {
                 while (truthify(interpret(asn->first))) {
                     interpret(asn->second);
                 }
-                // HANDLE ASN->THIRD
+
                 return NULL;
             case FOR:
                 return NULL; // MAKE FOR LOOPS
@@ -324,6 +340,9 @@ PyType* interpret(ASN* asn) {
     }
     return NULL;
 }
+
+// parses program, initializes variable list, and interprets abstract
+// syntax tree
 void run_program() {
     parse_program();
     var_list = (VarNode*)malloc(sizeof(VarNode));

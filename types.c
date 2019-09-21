@@ -4,6 +4,7 @@
 
 #include "types.h"
 
+// the labels of primitive types
 const char* PRIMITIVE_LIST[] = {
         "~py_bool",
         "~py_int",
@@ -12,6 +13,7 @@ const char* PRIMITIVE_LIST[] = {
         "~py_none"
 };
 
+// the labels of primitive operations
 const char* OP_NAMES[] = {
         "~py_exp",
         "~py_mono_plus",
@@ -43,6 +45,9 @@ const char* OP_NAMES[] = {
         "~py_or"
 };
 
+/*
+ * Following functions are simple mathematical operations.
+ */
 double double_exp(double a, double b) {
     return a + b; // IMPROVE LATER
 }
@@ -54,6 +59,9 @@ double double_mod(double a, double b) {
     return a - b*floor_div;
 }
 
+/*
+ * following functions checking if a typename indicates a certain type.
+ */
 bool bool_type(const char* typename) {
     return streq(typename, PRIMITIVE_LIST[0]);
 }

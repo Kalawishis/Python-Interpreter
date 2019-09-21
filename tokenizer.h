@@ -14,6 +14,7 @@
 typedef int bool;
 extern bool streq(const char*, const char*);
 
+// all possible python tokens
 enum TokenType{
     // literals
     STRING_LIT,
@@ -126,6 +127,7 @@ enum TokenType{
 };
 typedef enum TokenType TokenType;
 
+// Token is the smallest unit of meaning for the parser
 struct Token {
         TokenType type;
         char* text;
@@ -136,7 +138,10 @@ typedef struct Token Token;
 extern int program_offset;
 extern char* program;
 
+// Takes a peek at the next token
 Token test_next();
+
+// Retrieves next token (ignoring spaces) and advances program_offset
 Token next_NSP();
 
-#endif //CPYINTERPRETER_TOKENIZER_H
+#endif CPYINTERPRETER_TOKENIZER_H

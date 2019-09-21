@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
     FILE* py_program = fopen(argv[1], "r");
     if (!py_program) {
         printf("input error, program cannot find the python file specified\n");
+        exit(-1);
     }
     String* program_str = str_create();
     int c;
@@ -28,6 +29,6 @@ int main(int argc, char** argv) {
     fclose(py_program);
     program = program_str->internal;
     run_program();
-    printf("\nEvaluation is done.\n");
+    printf("\n***evaluation is done***\n");
     return 0;
 }

@@ -10,13 +10,19 @@
 #define LIST_SZ 100
 #define STR_SZ 100
 
+// represents any object in Python, including user-defined
 struct PyType {
     void* data;
     char* name;
 };
 typedef struct PyType PyType;
-PyType* py_create(void* data, char* name);
-PyType* py_copy(PyType* p);
+
+/*
+ * Following methods apply operations to the PyType.
+ * They check for compatibility as well.
+ */
+PyType* py_create(void* data, char* name); // object creation
+PyType* py_copy(PyType* p); // object copying
 PyType* py_exp(PyType* p, PyType* other);
 PyType* py_mono_plus(PyType* p);
 PyType* py_mono_minus(PyType* p);
@@ -46,12 +52,17 @@ PyType* py_not(PyType* p);
 PyType* py_and(PyType* p, PyType* other);
 PyType* py_or(PyType* p, PyType* other);
 
+// Represents Python list primitive type
 struct List {
     PyType** internal;
     int capacity;
     int index;
 };
 typedef struct List List;
+
+/*
+ * Methods for Python list primitive type.
+ */
 List* list_create();
 List* list_copy(List* l);
 PyType* list_get(List* l, int i);
@@ -62,12 +73,18 @@ bool list_greater(List* l, List* other);
 bool list_eq(List* l, List* other);
 bool list_less(List* l, List* other);
 
+// Represents Python string primitive type
+// Also used within interpreter for convenience
 struct String {
     char* internal;
     int capacity;
     int index;
 };
 typedef struct String String;
+
+/*
+ * Methods for Python string primitive type.
+ */
 String* str_create();
 String* str_char_copy(const char* other);
 String* str_var_copy(const char* other);
@@ -81,4 +98,4 @@ bool str_greater(String* l, String* other);
 bool str_eq(String* l, String* other);
 bool str_less(String* l, String* other);
 
-#endif //CPYINTERPRETER_TYPES_H
+#endif CPYINTERPRETER_TYPES_H

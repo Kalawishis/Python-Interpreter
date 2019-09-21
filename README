@@ -1,0 +1,9 @@
+This is a very basic Python interpreter written as a side-project for my
+Honors Operating Systems class. The goal of the class was to build a
+fully-functional Unix-like operating system with various features such as
+a shell, graphics, text editors, compilers, and interpreters, and my
+contribution was this interpreter.
+
+If you look around the code you may find implementations of functions
+already defined in the C standard library. I wrote my own implementations
+as our class operating system did not have the C standard library on it.
