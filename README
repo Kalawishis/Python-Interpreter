@@ -7,3 +7,5 @@ contribution was this interpreter.
 If you look around the code you may find implementations of functions
 already defined in the C standard library. I wrote my own implementations
 as our class operating system did not have the C standard library on it.
+
+Please note that this is by no means a completed project.
